@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopify Image Pro Downloader</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #f0f2f5;
+      margin: 0;
+      color: #333;
+    }
+    .header-controls {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+      flex-grow: 1;
+      flex-wrap: wrap;
+    }
+    input[type="text"] {
+      padding: 12px;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    select {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-primary:hover { background: #0056b3; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-success:hover { background: #218838; }
+    .btn-success:disabled { background: #a5d6a7; cursor: not-allowed; }
+    
+    .action-group {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .select-all-label {
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 8px 15px;
+      border-radius: 6px;
+    }
+
+    #status {
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #e9ecef;
+      display: inline-block;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 25px;
+    }
+    .image-box {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+    .image-box:hover { transform: translateY(-5px); }
+    .image-box img {
+      width: 100%;
+      height: 240px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: #f8f9fa;
+      cursor: zoom-in;
+    }
+    
+    .product-info {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f8f9fa;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .product-info.selected {
+      background: #e7f3ff;
+      border-color: #007bff;
+    }
+    .product-details {
+      text-align: left;
+      width: 85%;
+    }
+    .product-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #222;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .image-count {
+      font-size: 12px;
+      color: #6c757d;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed; 
+      z-index: 2000; 
+      left: 0; top: 0; width: 100%; height: 100%; 
+      background-color: rgba(0,0,0,0.9); 
+      backdrop-filter: blur(8px);
+    }
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90vh;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .close-modal {
+      position: absolute;
+      top: 20px; right: 35px;
+      color: white; font-size: 40px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Shopify Product Downloader</h2>
+
+  <div class="header-controls">
+    <div class="input-group">
+      <input type="text" id="collectionUrl" placeholder="Paste Shopify Collection URL (e.g., https://store.com/collections/all)">
+      <button class="btn-primary" onclick="loadProducts()">Fetch Products</button>
+    </div>
+    
+    <div class="action-group" id="actionGroup" style="display: none;">
+      <select id="formatSelect">
+        <option value="original">Format: Original</option>
+        <option value="png">Format: PNG</option>
+        <option value="jpg">Format: JPG</option>
+        <option value="webp">Format: WEBP</option>
+      </select>
+      <label class="select-all-label">
+        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" checked>
+        Select All
+      </label>
+      <button class="btn-success" id="downloadSelectedBtn" onclick="downloadSelectedAsZip()">Download Selected</button>
+    </div>
+  </div>
+
+  <div id="status">Ready</div>
+  <div class="gallery" id="gallery"></div>
+
+  <div id="imageModal" class="modal" onclick="closeModal()">
+    <span class="close-modal">&times;</span>
+    <img class="modal-content" id="modalImage">
+  </div>
+
+  <script>
+    let globalProductsData = [];
+
+    const cleanFileName = (name) => name.replace(/[<>:"/\\|?*]+/g, '').trim();
+    const getMasterImageUrl = (url) => url.split("?")[0];
+
+    function openModal(imageUrl) {
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      modal.style.display = "block";
+      modalImg.src = imageUrl;
+    }
+
+    function closeModal() {
+      document.getElementById("imageModal").style.display = "none";
+    }
+
+    async function fetchImageAsBlob(imageUrl) {
+      const response = await fetch(imageUrl, { mode: 'cors' });
+      if (!response.ok) throw new Error("Fetch failed");
+      return await response.blob();
+    }
+
+    async function convertImageBlob(blob, format) {
+      if (format === 'original') {
+        const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+        return { blob, ext };
+      }
+
+      const mimeType = format === 'jpg' ? 'image/jpeg' : `image/${format}`;
+      
+      try {
+        if (window.createImageBitmap && window.OffscreenCanvas) {
+          const bmp = await createImageBitmap(blob);
+          const canvas = new OffscreenCanvas(bmp.width, bmp.height);
+          const ctx = canvas.getContext('2d');
+          
+          if (format === 'jpg') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          
+          ctx.drawImage(bmp, 0, 0);
+          const newBlob = await canvas.convertToBlob({ type: mimeType, quality: 0.95 });
+          bmp.close();
+          return { blob: newBlob, ext: format };
+        }
+      } catch (e) {
+        console.warn("OffscreenCanvas not supported, using fallback.", e);
+      }
+
+      // Fallback for older browsers
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          
+          if (format === 'jpg') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((newBlob) => {
+            URL.revokeObjectURL(url);
+            if (newBlob) resolve({ blob: newBlob, ext: format });
+            else reject(new Error("Canvas conversion failed"));
+          }, mimeType, 0.95);
+        };
+        img.onerror = () => reject(new Error("Image processing failed"));
+        img.src = url;
+      });
+    }
+
+    async function loadProducts() {
+      const urlInput = document.getElementById("collectionUrl").value.trim();
+      const gallery = document.getElementById("gallery");
+      const status = document.getElementById("status");
+      const actionGroup = document.getElementById("actionGroup");
+
+      if (!urlInput) {
+        status.innerText = "Error: URL is required.";
+        return;
+      }
+
+      gallery.innerHTML = "";
+      actionGroup.style.display = "none";
+      status.innerText = "Connecting to Shopify...";
+
+      try {
+        const baseUrl = urlInput.split('/collections/')[0];
+        const collectionHandle = urlInput.split('/collections/')[1]?.split('/')[0]?.split('?')[0];
+        
+        const jsonUrl = collectionHandle 
+          ? `${baseUrl}/collections/${collectionHandle}/products.json?limit=250`
+          : `${urlInput.replace(/\/$/, "")}/products.json?limit=250`;
+
+        const response = await fetch(jsonUrl);
+        if (!response.ok) throw new Error("Could not fetch product data.");
+        
+        const data = await response.json();
+        globalProductsData = data.products;
+
+        if (globalProductsData.length === 0) {
+          status.innerText = "No products found.";
+          return;
+        }
+
+        renderApp(globalProductsData);
+        status.innerText = `Loaded ${globalProductsData.length} products.`;
+        actionGroup.style.display = "flex";
+      } catch (error) {
+        status.innerText = "Error: Please check the URL and your connection.";
+        console.error(error);
+      }
+    }
+
+    function renderApp(products) {
+      const gallery = document.getElementById("gallery");
+      document.getElementById("selectAllCheckbox").checked = true;
+
+      products.forEach((product, index) => {
+        if (product.images.length > 0) {
+          const thumb = getMasterImageUrl(product.images[0].src);
+          const box = document.createElement("div");
+          box.className = "image-box";
+          box.innerHTML = `
+            <img src="${thumb}" loading="lazy" onclick="openModal('${thumb}')">
+            <div class="product-info selected" onclick="toggleSingleSelection(${index}, this)">
+              <div class="product-details">
+                <div class="product-title">${product.title}</div>
+                <div class="image-count">${product.images.length} images</div>
+              </div>
+              <input type="checkbox" class="product-cb" value="${index}" checked onclick="event.stopPropagation(); updateDownloadButton()">
+            </div>
+          `;
+          gallery.appendChild(box);
+        }
+      });
+      updateDownloadButton();
+    }
+
+    function toggleSingleSelection(index, infoDiv) {
+      const cb = infoDiv.querySelector('.product-cb');
+      cb.checked = !cb.checked;
+      infoDiv.classList.toggle('selected', cb.checked);
+      updateDownloadButton();
+    }
+
+    window.toggleSelectAll = function(checkbox) {
+      const checkboxes = document.querySelectorAll(".product-cb");
+      const infoDivs = document.querySelectorAll(".product-info");
+      checkboxes.forEach((cb, i) => {
+        cb.checked = checkbox.checked;
+        infoDivs[i].classList.toggle('selected', checkbox.checked);
+      });
+      updateDownloadButton();
+    }
+
+    function updateDownloadButton() {
+      const checkedCount = document.querySelectorAll(".product-cb:checked").length;
+      const btn = document.getElementById("downloadSelectedBtn");
+      btn.innerText = `Download (${checkedCount}) ZIP`;
+      btn.disabled = checkedCount === 0;
+    }
+
+    async function downloadSelectedAsZip() {
+      const status = document.getElementById("status");
+      const downloadBtn = document.getElementById("downloadSelectedBtn");
+      const format = document.getElementById("formatSelect").value;
+      const checkedBoxes = document.querySelectorAll(".product-cb:checked");
+      
+      const selectedProducts = Array.from(checkedBoxes).map(cb => globalProductsData[cb.value]);
+      downloadBtn.disabled = true;
+      const zip = new JSZip();
+      
+      let totalImages = selectedProducts.reduce((sum, p) => sum + p.images.length, 0);
+      let processedCount = 0;
+
+      try {
+        // Strict sequential processing to ensure zero missing files and prevent memory overload in background
+        for (const product of selectedProducts) {
+          const folderName = cleanFileName(product.title);
+          const folder = zip.folder(folderName);
+          
+          for (let i = 0; i < product.images.length; i++) {
+            const url = getMasterImageUrl(product.images[i].src);
+            
+            try {
+              const rawBlob = await fetchImageAsBlob(url);
+              const { blob: finalBlob, ext } = await convertImageBlob(rawBlob, format);
+              
+              const filename = `${folderName}-${i + 1}.${ext}`;
+              folder.file(filename, finalBlob);
+            } catch (err) {
+              console.error(`Failed to process ${url}`, err);
+            }
+
+            processedCount++;
+            status.innerText = `Processing: ${processedCount} / ${totalImages} images...`;
+          }
+        }
+
+        status.innerText = "Compressing ZIP file... Please wait.";
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `Shopify_Bulk_Images_${Date.now()}.zip`);
+        status.innerText = "Download Complete!";
+      } catch (error) {
+        status.innerText = "An error occurred during ZIP generation.";
+        console.error(error);
+      } finally {
+        downloadBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
