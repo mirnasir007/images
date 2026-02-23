@@ -205,7 +205,11 @@
   <script>
     let globalProductsData = [];
 
-    const cleanFileName = (name) => name.replace(/[<>:"/\\|?*]+/g, '').trim();
+    const cleanFileName = (name) => {
+      if (!name) return "Untitled";
+      return name.replace(/[<>:"/\\|?*]+/g, '').trim();
+    };
+
     const getMasterImageUrl = (url) => url.split("?")[0];
 
     function openModal(imageUrl) {
@@ -219,10 +223,17 @@
       document.getElementById("imageModal").style.display = "none";
     }
 
-    async function fetchImageAsBlob(imageUrl) {
-      const response = await fetch(imageUrl, { mode: 'cors' });
-      if (!response.ok) throw new Error("Fetch failed");
-      return await response.blob();
+    async function fetchImageAsBlob(imageUrl, retries = 3) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(imageUrl, { mode: 'cors' });
+          if (!response.ok) throw new Error("Fetch failed");
+          return await response.blob();
+        } catch (error) {
+          if (i === retries - 1) throw error;
+          await new Promise(res => setTimeout(res, 1000 * (i + 1))); // Exponential backoff
+        }
+      }
     }
 
     async function convertImageBlob(blob, format) {
@@ -250,10 +261,9 @@
           return { blob: newBlob, ext: format };
         }
       } catch (e) {
-        console.warn("OffscreenCanvas not supported, using fallback.", e);
+        console.warn("OffscreenCanvas failed, utilizing fallback.", e);
       }
 
-      // Fallback for older browsers
       return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(blob);
@@ -275,7 +285,10 @@
             else reject(new Error("Canvas conversion failed"));
           }, mimeType, 0.95);
         };
-        img.onerror = () => reject(new Error("Image processing failed"));
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("Image processing failed"));
+        };
         img.src = url;
       });
     }
@@ -328,7 +341,7 @@
       document.getElementById("selectAllCheckbox").checked = true;
 
       products.forEach((product, index) => {
-        if (product.images.length > 0) {
+        if (product.images && product.images.length > 0) {
           const thumb = getMasterImageUrl(product.images[0].src);
           const box = document.createElement("div");
           box.className = "image-box";
@@ -336,7 +349,7 @@
             <img src="${thumb}" loading="lazy" onclick="openModal('${thumb}')">
             <div class="product-info selected" onclick="toggleSingleSelection(${index}, this)">
               <div class="product-details">
-                <div class="product-title">${product.title}</div>
+                <div class="product-title" title="${product.title}">${product.title}</div>
                 <div class="image-count">${product.images.length} images</div>
               </div>
               <input type="checkbox" class="product-cb" value="${index}" checked onclick="event.stopPropagation(); updateDownloadButton()">
@@ -372,6 +385,31 @@
       btn.disabled = checkedCount === 0;
     }
 
+    function generateUniqueFolderName(product, folderTracker) {
+      const baseName = cleanFileName(product.title);
+      let finalName = baseName;
+
+      if (folderTracker.has(baseName)) {
+        const sku = product.variants && product.variants.length > 0 ? cleanFileName(product.variants[0].sku) : null;
+        
+        if (sku && !folderTracker.has(`${baseName} - ${sku}`)) {
+          finalName = `${baseName} - ${sku}`;
+        } else {
+          let count = folderTracker.get(baseName) + 1;
+          while (folderTracker.has(`${baseName} - ${count}`)) {
+            count++;
+          }
+          finalName = `${baseName} - ${count}`;
+          folderTracker.set(baseName, count); 
+        }
+      } else {
+        folderTracker.set(baseName, 1);
+      }
+      
+      folderTracker.set(finalName, 1);
+      return finalName;
+    }
+
     async function downloadSelectedAsZip() {
       const status = document.getElementById("status");
       const downloadBtn = document.getElementById("downloadSelectedBtn");
@@ -382,13 +420,16 @@
       downloadBtn.disabled = true;
       const zip = new JSZip();
       
-      let totalImages = selectedProducts.reduce((sum, p) => sum + p.images.length, 0);
+      let totalImages = selectedProducts.reduce((sum, p) => sum + (p.images ? p.images.length : 0), 0);
       let processedCount = 0;
+      
+      const folderTracker = new Map();
 
       try {
-        // Strict sequential processing to ensure zero missing files and prevent memory overload in background
         for (const product of selectedProducts) {
-          const folderName = cleanFileName(product.title);
+          if (!product.images || product.images.length === 0) continue;
+
+          const folderName = generateUniqueFolderName(product, folderTracker);
           const folder = zip.folder(folderName);
           
           for (let i = 0; i < product.images.length; i++) {
