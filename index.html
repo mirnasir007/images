@@ -9,23 +9,39 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 20px;
+      padding: 0 20px 20px 20px;
       background: #f0f2f5;
       margin: 0;
       color: #333;
     }
+    
+    /* Entire Header Wrapper Frozen at Top */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #f0f2f5; /* Matches body background to prevent transparency overlap */
+      padding: 20px 0 15px 0;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
     .header-controls {
       background: white;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      margin-bottom: 25px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
       display: flex;
       flex-wrap: wrap;
       gap: 15px;
       align-items: center;
       justify-content: space-between;
     }
+    
     .input-group {
       display: flex;
       gap: 10px;
@@ -171,29 +187,30 @@
 </head>
 <body>
 
-  <h2>Shopify Product Downloader</h2>
+  <div class="sticky-header">
+    <h2>Shopify Product Downloader</h2>
 
-  <div class="header-controls">
-    <div class="input-group">
-      <input type="text" id="collectionUrl" placeholder="Paste Shopify Collection URL (e.g., https://store.com/collections/all)">
-      <button class="btn-primary" onclick="loadProducts()">Fetch Products</button>
-    </div>
-    
-    <div class="action-group" id="actionGroup" style="display: none;">
-      <select id="formatSelect">
-        <option value="original">Format: Original</option>
-        <option value="png">Format: PNG</option>
-        <option value="jpg">Format: JPG</option>
-        <option value="webp">Format: WEBP</option>
-      </select>
-      <label class="select-all-label">
-        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" checked>
-        Select All
-      </label>
-      <button class="btn-success" id="downloadSelectedBtn" onclick="downloadSelectedAsZip()">Download Selected</button>
+    <div class="header-controls">
+      <div class="input-group">
+        <input type="text" id="collectionUrl" placeholder="Paste Shopify Collection URL (e.g., https://store.com/collections/all)">
+        <button class="btn-primary" onclick="loadProducts()">Fetch Products</button>
+      </div>
+      
+      <div class="action-group" id="actionGroup" style="display: none;">
+        <select id="formatSelect">
+          <option value="original">Format: Original</option>
+          <option value="png">Format: PNG</option>
+          <option value="jpg">Format: JPG</option>
+          <option value="webp">Format: WEBP</option>
+        </select>
+        <label class="select-all-label">
+          <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" checked>
+          Select All
+        </label>
+        <button class="btn-success" id="downloadSelectedBtn" onclick="downloadSelectedAsZip()">Download Selected</button>
+      </div>
     </div>
   </div>
-
   <div id="status">Ready</div>
   <div class="gallery" id="gallery"></div>
 
