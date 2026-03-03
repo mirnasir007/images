@@ -15,7 +15,6 @@
       color: #333;
     }
     
-    /* Entire Header Wrapper Frozen at Top */
     .sticky-header {
       position: sticky;
       top: 0;
@@ -36,11 +35,11 @@
       border-radius: 12px;
       box-shadow: 0 6px 16px rgba(0,0,0,0.08);
       display: flex;
-      flex-wrap: nowrap; /* Strict single line */
+      flex-wrap: nowrap;
       gap: 15px;
       align-items: center;
       justify-content: space-between;
-      overflow-x: auto; /* Fallback for very small screens */
+      overflow-x: auto;
     }
     
     .input-group {
@@ -93,8 +92,8 @@
       display: flex;
       gap: 10px;
       align-items: center;
-      flex-wrap: nowrap; /* Strict single line */
-      flex-shrink: 0; /* Prevents action items from squishing */
+      flex-wrap: nowrap;
+      flex-shrink: 0;
     }
     .select-all-label {
       font-weight: 600;
@@ -198,6 +197,16 @@
       top: 20px; right: 35px;
       color: white; font-size: 40px; cursor: pointer;
     }
+
+    .load-more-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    #loadMoreBtn {
+      padding: 12px 30px;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
   </style>
 </head>
 <body>
@@ -230,6 +239,10 @@
 
   <div id="status">Ready</div>
   <div class="gallery" id="gallery"></div>
+  
+  <div class="load-more-container">
+    <button id="loadMoreBtn" class="btn-primary" style="display: none;" onclick="loadMoreProducts()">Load More Products</button>
+  </div>
 
   <div id="imageModal" class="modal" onclick="closeModal()">
     <span class="close-modal">&times;</span>
@@ -238,6 +251,7 @@
 
   <script>
     let globalProductsData = [];
+    let currentPage = 1; // Page tracker for pagination
 
     const cleanFileName = (name) => {
       if (!name) return "Untitled";
@@ -327,66 +341,123 @@
       });
     }
 
+    // New helper function to fetch data based on page number
+    async function fetchProductsData(page) {
+      const urlInput = document.getElementById("collectionUrl").value.trim();
+      const baseUrl = urlInput.split('/collections/')[0];
+      const collectionHandle = urlInput.split('/collections/')[1]?.split('/')[0]?.split('?')[0];
+      
+      const jsonUrl = collectionHandle 
+        ? `${baseUrl}/collections/${collectionHandle}/products.json?limit=250&page=${page}`
+        : `${urlInput.replace(/\/$/, "")}/products.json?limit=250&page=${page}`;
+
+      const response = await fetch(jsonUrl);
+      if (!response.ok) throw new Error("Could not fetch product data.");
+      const data = await response.json();
+      return data.products;
+    }
+
     async function loadProducts() {
       const urlInput = document.getElementById("collectionUrl").value.trim();
       const gallery = document.getElementById("gallery");
       const status = document.getElementById("status");
       const actionGroup = document.getElementById("actionGroup");
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
 
       if (!urlInput) {
         status.innerText = "Error: URL is required.";
         return;
       }
 
+      // Reset states for a new fetch
+      currentPage = 1;
+      globalProductsData = [];
       gallery.innerHTML = "";
       actionGroup.style.display = "none";
+      loadMoreBtn.style.display = "none";
+      document.getElementById("selectAllCheckbox").checked = true;
       status.innerText = "Connecting to Shopify...";
 
       try {
-        const baseUrl = urlInput.split('/collections/')[0];
-        const collectionHandle = urlInput.split('/collections/')[1]?.split('/')[0]?.split('?')[0];
-        
-        const jsonUrl = collectionHandle 
-          ? `${baseUrl}/collections/${collectionHandle}/products.json?limit=250`
-          : `${urlInput.replace(/\/$/, "")}/products.json?limit=250`;
+        const products = await fetchProductsData(currentPage);
 
-        const response = await fetch(jsonUrl);
-        if (!response.ok) throw new Error("Could not fetch product data.");
-        
-        const data = await response.json();
-        globalProductsData = data.products;
-
-        if (globalProductsData.length === 0) {
+        if (products.length === 0) {
           status.innerText = "No products found.";
           return;
         }
 
-        renderApp(globalProductsData);
+        globalProductsData = products;
+        renderApp(products, 0); // Start index 0
+        
         status.innerText = `Loaded ${globalProductsData.length} products.`;
         actionGroup.style.display = "flex";
+
+        // Show Load More button if exactly 250 products returned
+        if (products.length === 250) {
+          loadMoreBtn.style.display = "inline-block";
+        }
       } catch (error) {
         status.innerText = "Error: Please check the URL and your connection.";
         console.error(error);
       }
     }
 
-    function renderApp(products) {
-      const gallery = document.getElementById("gallery");
-      document.getElementById("selectAllCheckbox").checked = true;
+    async function loadMoreProducts() {
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+      const status = document.getElementById("status");
+      
+      loadMoreBtn.innerText = "Loading...";
+      loadMoreBtn.disabled = true;
+      currentPage++;
 
-      products.forEach((product, index) => {
+      try {
+        const newProducts = await fetchProductsData(currentPage);
+        
+        if (newProducts.length > 0) {
+          const startIndex = globalProductsData.length;
+          globalProductsData = globalProductsData.concat(newProducts);
+          renderApp(newProducts, startIndex); // Start index offset for new products
+          status.innerText = `Loaded ${globalProductsData.length} products total.`;
+        }
+
+        // Check if there might be more products
+        if (newProducts.length < 250) {
+          loadMoreBtn.style.display = "none"; // Hide button, no more products
+        } else {
+          loadMoreBtn.innerText = "Load More Products";
+          loadMoreBtn.disabled = false;
+        }
+      } catch (error) {
+        status.innerText = "Error loading more products.";
+        console.error(error);
+        loadMoreBtn.innerText = "Load More Products";
+        loadMoreBtn.disabled = false;
+      }
+    }
+
+    // Updated renderApp accepts a startIndex to keep checkboxes in sync
+    function renderApp(products, startIndex) {
+      const gallery = document.getElementById("gallery");
+      const isSelectAllChecked = document.getElementById("selectAllCheckbox").checked;
+
+      products.forEach((product, i) => {
+        const globalIndex = startIndex + i;
         if (product.images && product.images.length > 0) {
           const thumb = getMasterImageUrl(product.images[0].src);
           const box = document.createElement("div");
           box.className = "image-box";
+          
+          const checkedAttr = isSelectAllChecked ? "checked" : "";
+          const selectedClass = isSelectAllChecked ? "selected" : "";
+
           box.innerHTML = `
             <img src="${thumb}" loading="lazy" onclick="openModal('${thumb}')">
-            <div class="product-info selected" onclick="toggleSingleSelection(${index}, this)">
+            <div class="product-info ${selectedClass}" onclick="toggleSingleSelection(${globalIndex}, this)">
               <div class="product-details">
                 <div class="product-title" title="${product.title}">${product.title}</div>
                 <div class="image-count">${product.images.length} images</div>
               </div>
-              <input type="checkbox" class="product-cb" value="${index}" checked onclick="event.stopPropagation(); updateDownloadButton()">
+              <input type="checkbox" class="product-cb" value="${globalIndex}" ${checkedAttr} onclick="event.stopPropagation(); updateDownloadButton()">
             </div>
           `;
           gallery.appendChild(box);
