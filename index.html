@@ -348,6 +348,9 @@
     let currentPage = 1; 
     let currentFetchMode = "collection"; 
     
+    // Global Memory for Persistent Selection
+    let globalSelectedProducts = new Map();
+    
     // Slider variables
     let currentSliderProductIndex = -1;
     let currentSliderImageIndex = -1;
@@ -445,6 +448,11 @@
         prod.selectedImageIndices.push(imgIdx);
         itemDiv.classList.add('selected');
         cb.checked = true;
+      }
+      
+      // Update the global map if this product is selected
+      if (globalSelectedProducts.has(prod.id)) {
+        globalSelectedProducts.set(prod.id, prod);
       }
     }
 
@@ -663,14 +671,26 @@
         }
 
         if (product.images && product.images.length > 0) {
+          // Restore specific image selections if it was saved before
+          if (globalSelectedProducts.has(product.id)) {
+            product.selectedImageIndices = globalSelectedProducts.get(product.id).selectedImageIndices;
+          }
+
           const thumb = getMasterImageUrl(product.images[0].src);
           const box = document.createElement("div");
           box.className = "image-box";
           
-          const checkedAttr = isSelectAllChecked ? "checked" : "";
-          const selectedClass = isSelectAllChecked ? "selected" : "";
+          // Check if it's already in our global selected map, or if select all is checked
+          const isSelected = globalSelectedProducts.has(product.id) || isSelectAllChecked;
+          const checkedAttr = isSelected ? "checked" : "";
+          const selectedClass = isSelected ? "selected" : "";
           const vendorText = product.vendor ? ` | ${product.vendor}` : "";
           const selectedCount = product.selectedImageIndices.length;
+          
+          // If select all is checked, ensure it's added to the global map
+          if (isSelectAllChecked) {
+             globalSelectedProducts.set(product.id, product);
+          }
 
           box.innerHTML = `
             <img src="${thumb}" loading="lazy" onclick="openModal(${globalIndex}, 0)">
@@ -695,6 +715,14 @@
       const cb = infoDiv.querySelector('.product-cb');
       cb.checked = !cb.checked;
       infoDiv.classList.toggle('selected', cb.checked);
+      
+      const product = globalProductsData[index];
+      if (cb.checked) {
+        globalSelectedProducts.set(product.id, product);
+      } else {
+        globalSelectedProducts.delete(product.id);
+      }
+      
       updateDownloadButton();
     }
 
@@ -704,12 +732,19 @@
       checkboxes.forEach((cb, i) => {
         cb.checked = checkbox.checked;
         infoDivs[i].classList.toggle('selected', checkbox.checked);
+        
+        const product = globalProductsData[cb.value];
+        if (checkbox.checked) {
+          globalSelectedProducts.set(product.id, product);
+        } else {
+          globalSelectedProducts.delete(product.id);
+        }
       });
       updateDownloadButton();
     }
 
     function updateDownloadButton() {
-      const checkedCount = document.querySelectorAll(".product-cb:checked").length;
+      const checkedCount = globalSelectedProducts.size;
       const btn = document.getElementById("downloadSelectedBtn");
       btn.innerText = `Download (${checkedCount}) ZIP`;
       btn.disabled = checkedCount === 0;
@@ -737,9 +772,9 @@
       const downloadBtn = document.getElementById("downloadSelectedBtn");
       const format = document.getElementById("formatSelect").value;
       const customZipNameInput = document.getElementById("zipFileName").value.trim();
-      const checkedBoxes = document.querySelectorAll(".product-cb:checked");
       
-      const selectedProducts = Array.from(checkedBoxes).map(cb => globalProductsData[cb.value]);
+      // Fetch selected products from the global map instead of just DOM checkboxes
+      const selectedProducts = Array.from(globalSelectedProducts.values());
       downloadBtn.disabled = true;
       const zip = new JSZip();
       
