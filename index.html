@@ -21,7 +21,7 @@
       z-index: 1000;
       background: #f0f2f5;
       padding: 20px 0 15px 0;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
 
     h2 {
@@ -40,29 +40,37 @@
       align-items: center;
       justify-content: space-between;
       overflow-x: auto;
+      margin-bottom: 10px;
     }
     
+    .filter-group {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
     .input-group {
       display: flex;
       gap: 10px;
       flex-grow: 1;
-      flex-wrap: nowrap;
       min-width: 250px;
     }
+    
     input[type="text"] {
       padding: 10px 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 14px;
     }
-    .url-input {
-      width: 100%;
-      flex-grow: 1;
-    }
-    .zip-name-input {
-      width: 180px;
-      flex-shrink: 0;
-    }
+    .url-input { width: 100%; flex-grow: 1; }
+    .filter-input { width: 100%; max-width: 400px; }
+    .zip-name-input { width: 180px; flex-shrink: 0; }
+    
     select {
       padding: 10px 12px;
       border: 1px solid #ddd;
@@ -70,8 +78,8 @@
       font-size: 14px;
       background: #fff;
       cursor: pointer;
-      flex-shrink: 0;
     }
+    
     button {
       padding: 10px 18px;
       cursor: pointer;
@@ -80,20 +88,19 @@
       font-weight: 600;
       transition: all 0.2s ease;
       white-space: nowrap;
-      flex-shrink: 0;
     }
     .btn-primary { background: #007bff; color: white; }
     .btn-primary:hover { background: #0056b3; }
     .btn-success { background: #28a745; color: white; }
     .btn-success:hover { background: #218838; }
     .btn-success:disabled { background: #a5d6a7; cursor: not-allowed; }
+    .btn-outline { background: #fff; color: #007bff; border: 1px solid #007bff; padding: 6px 10px; font-size: 12px; margin-top: 8px;}
+    .btn-outline:hover { background: #e7f3ff; }
     
     .action-group {
       display: flex;
       gap: 10px;
       align-items: center;
-      flex-wrap: nowrap;
-      flex-shrink: 0;
     }
     .select-all-label {
       font-weight: 600;
@@ -105,13 +112,11 @@
       border: 1px solid #ddd;
       padding: 8px 12px;
       border-radius: 6px;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
 
     #status {
       font-weight: 600;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       padding: 10px;
       border-radius: 6px;
       background: #e9ecef;
@@ -130,9 +135,8 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s;
+      position: relative;
     }
-    .image-box:hover { transform: translateY(-5px); }
     .image-box img {
       width: 100%;
       height: 240px;
@@ -151,7 +155,7 @@
       cursor: pointer;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
     }
     .product-info.selected {
       background: #e7f3ff;
@@ -169,12 +173,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .image-count {
+    .product-meta {
       font-size: 12px;
       color: #6c757d;
+      margin-top: 4px;
+      margin-bottom: 4px;
     }
 
-    /* Modal */
+    /* Slider Modal styling */
     .modal {
       display: none;
       position: fixed; 
@@ -186,8 +192,8 @@
     .modal-content {
       margin: auto;
       display: block;
-      max-width: 90%;
-      max-height: 90vh;
+      max-width: 85%;
+      max-height: 85vh;
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
@@ -196,17 +202,87 @@
       position: absolute;
       top: 20px; right: 35px;
       color: white; font-size: 40px; cursor: pointer;
+      z-index: 2005;
+    }
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: white;
+      font-size: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 20px;
+      user-select: none;
+      z-index: 2005;
+      transition: 0.3s;
+    }
+    .nav-arrow:hover { color: #bbb; }
+    .left-arrow { left: 2%; }
+    .right-arrow { right: 2%; }
+    
+    #modalImageCounter {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
     }
 
-    .load-more-container {
-      text-align: center;
-      margin: 30px 0;
+    /* Specific Image Selector Modal */
+    .selector-content {
+      background: white;
+      margin: 5% auto;
+      padding: 20px;
+      width: 80%;
+      max-width: 800px;
+      border-radius: 12px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
     }
-    #loadMoreBtn {
-      padding: 12px 30px;
-      font-size: 16px;
-      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    .selector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
     }
+    .selector-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+    }
+    .selector-item {
+      position: relative;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 5px;
+    }
+    .selector-item.selected {
+      border-color: #28a745;
+      background: #e8f5e9;
+    }
+    .selector-item img {
+      width: 100%;
+      height: 120px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+    .selector-item input {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      transform: scale(1.5);
+      cursor: pointer;
+    }
+
+    .load-more-container { text-align: center; margin: 30px 0; }
+    #loadMoreBtn { padding: 12px 30px; font-size: 16px; box-shadow: 0 4px 12px rgba(0,123,255,0.3); }
   </style>
 </head>
 <body>
@@ -216,7 +292,7 @@
 
     <div class="header-controls">
       <div class="input-group">
-        <input type="text" id="collectionUrl" class="url-input" placeholder="Paste Shopify Collection URL (e.g., https://store.com/collections/all)">
+        <input type="text" id="collectionUrl" class="url-input" placeholder="Paste Shopify URL (Collection, Product, or Search Link)">
         <button class="btn-primary" onclick="loadProducts()">Fetch Products</button>
       </div>
       
@@ -227,13 +303,18 @@
           <option value="jpg">Format: JPG</option>
           <option value="webp">Format: WEBP</option>
         </select>
-        <input type="text" id="zipFileName" class="zip-name-input" placeholder="Custom ZIP Name (Optional)">
+        <input type="text" id="zipFileName" class="zip-name-input" placeholder="Custom ZIP Name">
         <label class="select-all-label">
           <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" checked>
           Select All
         </label>
         <button class="btn-success" id="downloadSelectedBtn" onclick="downloadSelectedAsZip()">Download Selected</button>
       </div>
+    </div>
+    
+    <div class="filter-group" id="filterGroup" style="display: none;">
+      <strong>Filter:</strong>
+      <input type="text" id="filterGeneral" class="filter-input" placeholder="Search by Title, Vendor, or Type..." oninput="applyFilters()">
     </div>
   </div>
 
@@ -246,31 +327,129 @@
 
   <div id="imageModal" class="modal" onclick="closeModal()">
     <span class="close-modal">&times;</span>
-    <img class="modal-content" id="modalImage">
+    <span class="nav-arrow left-arrow" onclick="navModal(-1, event)">&#10094;</span>
+    <img class="modal-content" id="modalImage" onclick="event.stopPropagation()">
+    <span class="nav-arrow right-arrow" onclick="navModal(1, event)">&#10095;</span>
+    <div id="modalImageCounter"></div>
+  </div>
+
+  <div id="imageSelectorModal" class="modal" onclick="closeSelectorModal()">
+    <div class="selector-content" onclick="event.stopPropagation()">
+      <div class="selector-header">
+        <h3 style="margin:0;">Select Specific Images</h3>
+        <button class="btn-primary" onclick="closeSelectorModal()">Save Selection</button>
+      </div>
+      <div class="selector-gallery" id="selectorGallery"></div>
+    </div>
   </div>
 
   <script>
     let globalProductsData = [];
-    let currentPage = 1; // Page tracker for pagination
+    let currentPage = 1; 
+    let currentFetchMode = "collection"; 
+    
+    // Slider variables
+    let currentSliderProductIndex = -1;
+    let currentSliderImageIndex = -1;
+    
+    // Specific Selector variable
+    let currentSelectingProductIndex = -1;
 
     const cleanFileName = (name) => {
       if (!name) return "Untitled";
       return name.replace(/[<>:"/\\|?*]+/g, '').trim();
     };
 
-    const getMasterImageUrl = (url) => url.split("?")[0];
+    const getMasterImageUrl = (url) => url ? url.split("?")[0] : "";
 
-    function openModal(imageUrl) {
-      const modal = document.getElementById("imageModal");
-      const modalImg = document.getElementById("modalImage");
-      modal.style.display = "block";
-      modalImg.src = imageUrl;
+    // ========== SLIDER MODAL LOGIC ==========
+    function openModal(prodIdx, imgIdx) {
+      currentSliderProductIndex = prodIdx;
+      currentSliderImageIndex = imgIdx;
+      updateModalImage();
+      document.getElementById("imageModal").style.display = "block";
     }
 
     function closeModal() {
       document.getElementById("imageModal").style.display = "none";
     }
 
+    function updateModalImage() {
+      const prod = globalProductsData[currentSliderProductIndex];
+      if(!prod || !prod.images || prod.images.length === 0) return;
+      const imgUrl = getMasterImageUrl(prod.images[currentSliderImageIndex].src);
+      document.getElementById("modalImage").src = imgUrl;
+      document.getElementById("modalImageCounter").innerText = `Image ${currentSliderImageIndex + 1} of ${prod.images.length}`;
+    }
+
+    function navModal(direction, event) {
+      if(event) event.stopPropagation();
+      const prod = globalProductsData[currentSliderProductIndex];
+      if(!prod || !prod.images) return;
+      
+      currentSliderImageIndex += direction;
+      if (currentSliderImageIndex < 0) currentSliderImageIndex = prod.images.length - 1;
+      if (currentSliderImageIndex >= prod.images.length) currentSliderImageIndex = 0;
+      updateModalImage();
+    }
+
+    // Keyboard support for Slider
+    document.addEventListener('keydown', function(event) {
+      if (document.getElementById('imageModal').style.display === 'block') {
+        if (event.key === 'ArrowLeft') navModal(-1);
+        if (event.key === 'ArrowRight') navModal(1);
+        if (event.key === 'Escape') closeModal();
+      }
+    });
+
+    // ========== SPECIFIC IMAGE SELECTOR LOGIC ==========
+    function openSelectorModal(globalIndex, event) {
+      event.stopPropagation();
+      currentSelectingProductIndex = globalIndex;
+      const prod = globalProductsData[globalIndex];
+      const gallery = document.getElementById("selectorGallery");
+      gallery.innerHTML = "";
+      
+      if(prod.images) {
+        prod.images.forEach((img, idx) => {
+          const isSelected = prod.selectedImageIndices.includes(idx);
+          const thumb = getMasterImageUrl(img.src);
+          const div = document.createElement("div");
+          div.className = `selector-item ${isSelected ? 'selected' : ''}`;
+          div.onclick = () => toggleSpecificImage(idx, div);
+          div.innerHTML = `
+            <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSpecificImage(${idx}, this.parentElement)">
+            <img src="${thumb}">
+          `;
+          gallery.appendChild(div);
+        });
+      }
+      document.getElementById("imageSelectorModal").style.display = "block";
+    }
+
+    function closeSelectorModal() {
+      document.getElementById("imageSelectorModal").style.display = "none";
+      renderApp(); // re-render to update the image count badge
+    }
+
+    function toggleSpecificImage(imgIdx, itemDiv) {
+      const prod = globalProductsData[currentSelectingProductIndex];
+      const cb = itemDiv.querySelector('input');
+      
+      // Toggle logic
+      if(prod.selectedImageIndices.includes(imgIdx)) {
+        prod.selectedImageIndices = prod.selectedImageIndices.filter(i => i !== imgIdx);
+        itemDiv.classList.remove('selected');
+        cb.checked = false;
+      } else {
+        prod.selectedImageIndices.push(imgIdx);
+        itemDiv.classList.add('selected');
+        cb.checked = true;
+      }
+    }
+
+
+    // ========== FETCH & PROCESS LOGIC ==========
     async function fetchImageAsBlob(imageUrl, retries = 3) {
       for (let i = 0; i < retries; i++) {
         try {
@@ -289,43 +468,15 @@
         const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
         return { blob, ext };
       }
-
       const mimeType = format === 'jpg' ? 'image/jpeg' : `image/${format}`;
-      
-      try {
-        if (window.createImageBitmap && window.OffscreenCanvas) {
-          const bmp = await createImageBitmap(blob);
-          const canvas = new OffscreenCanvas(bmp.width, bmp.height);
-          const ctx = canvas.getContext('2d');
-          
-          if (format === 'jpg') {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-          
-          ctx.drawImage(bmp, 0, 0);
-          const newBlob = await canvas.convertToBlob({ type: mimeType, quality: 0.95 });
-          bmp.close();
-          return { blob: newBlob, ext: format };
-        }
-      } catch (e) {
-        console.warn("OffscreenCanvas failed, utilizing fallback.", e);
-      }
-
       return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(blob);
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
+          canvas.width = img.width; canvas.height = img.height;
           const ctx = canvas.getContext('2d');
-          
-          if (format === 'jpg') {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-          
+          if (format === 'jpg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
           ctx.drawImage(img, 0, 0);
           canvas.toBlob((newBlob) => {
             URL.revokeObjectURL(url);
@@ -333,68 +484,132 @@
             else reject(new Error("Canvas conversion failed"));
           }, mimeType, 0.95);
         };
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          reject(new Error("Image processing failed"));
-        };
+        img.onerror = () => reject(new Error("Image processing failed"));
         img.src = url;
       });
     }
 
-    // New helper function to fetch data based on page number
+    function parseShopifyUrl(rawUrl) {
+      try {
+        const urlObj = new URL(rawUrl);
+        let baseUrl = urlObj.origin;
+        let mode = "collection";
+        let handleOrQuery = "";
+
+        if (urlObj.pathname.includes('/products/')) {
+          mode = "product";
+          handleOrQuery = urlObj.pathname.split('/products/')[1].split('/')[0];
+        } else if (urlObj.pathname.includes('/search') || urlObj.searchParams.has('q')) {
+          mode = "search";
+          handleOrQuery = urlObj.searchParams.get('q');
+        } else if (urlObj.pathname.includes('/collections/')) {
+          handleOrQuery = urlObj.pathname.split('/collections/')[1].split('/')[0];
+        }
+        return { baseUrl, mode, handleOrQuery };
+      } catch (e) { return null; }
+    }
+
     async function fetchProductsData(page) {
       const urlInput = document.getElementById("collectionUrl").value.trim();
-      const baseUrl = urlInput.split('/collections/')[0];
-      const collectionHandle = urlInput.split('/collections/')[1]?.split('/')[0]?.split('?')[0];
-      
-      const jsonUrl = collectionHandle 
-        ? `${baseUrl}/collections/${collectionHandle}/products.json?limit=250&page=${page}`
-        : `${urlInput.replace(/\/$/, "")}/products.json?limit=250&page=${page}`;
+      const parsed = parseShopifyUrl(urlInput);
+      if (!parsed) throw new Error("Invalid URL format.");
 
-      const response = await fetch(jsonUrl);
-      if (!response.ok) throw new Error("Could not fetch product data.");
-      const data = await response.json();
-      return data.products;
+      currentFetchMode = parsed.mode;
+      const { baseUrl, mode, handleOrQuery } = parsed;
+
+      if (mode === "product") {
+        const res = await fetch(`${baseUrl}/products/${handleOrQuery}.json`);
+        if (!res.ok) throw new Error("Product not found.");
+        const data = await res.json();
+        return [data.product];
+      } 
+      else if (mode === "search") {
+        // Updated Search Logic with Fallback
+        let searchProducts = [];
+        try {
+          const suggestUrl = `${baseUrl}/search/suggest.json?q=${encodeURIComponent(handleOrQuery)}&resources[type]=product&resources[limit]=250`;
+          const res = await fetch(suggestUrl);
+          if (res.ok) {
+            const data = await res.json();
+            searchProducts = data.resources?.results?.products || [];
+          }
+        } catch(e) { console.warn("Suggest API failed, trying fallback..."); }
+        
+        // Fallback: If search fails or blocked, fetch all general products and filter locally
+        if(searchProducts.length === 0) {
+            const fallbackRes = await fetch(`${baseUrl}/products.json?limit=250`);
+            if(!fallbackRes.ok) throw new Error("Search failed and Fallback blocked.");
+            const fallbackData = await fallbackRes.json();
+            const keyword = handleOrQuery.toLowerCase();
+            return fallbackData.products.filter(p => 
+                p.title.toLowerCase().includes(keyword) || 
+                (p.vendor && p.vendor.toLowerCase().includes(keyword)) ||
+                (p.product_type && p.product_type.toLowerCase().includes(keyword)) ||
+                (p.tags && p.tags.some(t => t.toLowerCase().includes(keyword)))
+            );
+        } else {
+            const fetchPromises = searchProducts.map(sp => 
+                fetch(`${baseUrl}/products/${sp.handle}.json`).then(r => r.ok ? r.json() : null)
+            );
+            const results = await Promise.all(fetchPromises);
+            return results.filter(r => r && r.product).map(r => r.product);
+        }
+      } 
+      else {
+        const jsonUrl = handleOrQuery 
+          ? `${baseUrl}/collections/${handleOrQuery}/products.json?limit=250&page=${page}`
+          : `${urlInput.replace(/\/$/, "")}/products.json?limit=250&page=${page}`;
+        const response = await fetch(jsonUrl);
+        if (!response.ok) throw new Error("Could not fetch product data.");
+        const data = await response.json();
+        return data.products;
+      }
+    }
+    
+    // Initialize specific variables for each fetched product
+    function initializeProductData(products) {
+        return products.map(p => {
+            if(p.images) {
+                // By default select all images
+                p.selectedImageIndices = p.images.map((_, idx) => idx);
+            } else {
+                p.selectedImageIndices = [];
+            }
+            return p;
+        });
     }
 
     async function loadProducts() {
       const urlInput = document.getElementById("collectionUrl").value.trim();
-      const gallery = document.getElementById("gallery");
       const status = document.getElementById("status");
-      const actionGroup = document.getElementById("actionGroup");
-      const loadMoreBtn = document.getElementById("loadMoreBtn");
+      if (!urlInput) { status.innerText = "Error: URL is required."; return; }
 
-      if (!urlInput) {
-        status.innerText = "Error: URL is required.";
-        return;
-      }
-
-      // Reset states for a new fetch
       currentPage = 1;
       globalProductsData = [];
-      gallery.innerHTML = "";
-      actionGroup.style.display = "none";
-      loadMoreBtn.style.display = "none";
+      document.getElementById("gallery").innerHTML = "";
+      document.getElementById("actionGroup").style.display = "none";
+      document.getElementById("filterGroup").style.display = "none";
+      document.getElementById("loadMoreBtn").style.display = "none";
       document.getElementById("selectAllCheckbox").checked = true;
+      document.getElementById("filterGeneral").value = "";
+
       status.innerText = "Connecting to Shopify...";
 
       try {
-        const products = await fetchProductsData(currentPage);
-
+        let products = await fetchProductsData(currentPage);
         if (products.length === 0) {
-          status.innerText = "No products found.";
-          return;
+          status.innerText = "No products found for this link."; return;
         }
 
-        globalProductsData = products;
-        renderApp(products, 0); // Start index 0
+        globalProductsData = initializeProductData(products);
+        renderApp(); 
         
         status.innerText = `Loaded ${globalProductsData.length} products.`;
-        actionGroup.style.display = "flex";
+        document.getElementById("actionGroup").style.display = "flex";
+        document.getElementById("filterGroup").style.display = "flex";
 
-        // Show Load More button if exactly 250 products returned
-        if (products.length === 250) {
-          loadMoreBtn.style.display = "inline-block";
+        if (currentFetchMode === "collection" && products.length === 250) {
+          document.getElementById("loadMoreBtn").style.display = "inline-block";
         }
       } catch (error) {
         status.innerText = "Error: Please check the URL and your connection.";
@@ -405,43 +620,48 @@
     async function loadMoreProducts() {
       const loadMoreBtn = document.getElementById("loadMoreBtn");
       const status = document.getElementById("status");
-      
       loadMoreBtn.innerText = "Loading...";
       loadMoreBtn.disabled = true;
       currentPage++;
 
       try {
-        const newProducts = await fetchProductsData(currentPage);
-        
+        let newProducts = await fetchProductsData(currentPage);
         if (newProducts.length > 0) {
-          const startIndex = globalProductsData.length;
+          newProducts = initializeProductData(newProducts);
           globalProductsData = globalProductsData.concat(newProducts);
-          renderApp(newProducts, startIndex); // Start index offset for new products
+          renderApp(); 
           status.innerText = `Loaded ${globalProductsData.length} products total.`;
         }
-
-        // Check if there might be more products
         if (newProducts.length < 250) {
-          loadMoreBtn.style.display = "none"; // Hide button, no more products
+          loadMoreBtn.style.display = "none"; 
         } else {
           loadMoreBtn.innerText = "Load More Products";
           loadMoreBtn.disabled = false;
         }
       } catch (error) {
         status.innerText = "Error loading more products.";
-        console.error(error);
         loadMoreBtn.innerText = "Load More Products";
         loadMoreBtn.disabled = false;
       }
     }
 
-    // Updated renderApp accepts a startIndex to keep checkboxes in sync
-    function renderApp(products, startIndex) {
-      const gallery = document.getElementById("gallery");
-      const isSelectAllChecked = document.getElementById("selectAllCheckbox").checked;
+    function applyFilters() { renderApp(); }
 
-      products.forEach((product, i) => {
-        const globalIndex = startIndex + i;
+    function renderApp() {
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
+      const isSelectAllChecked = document.getElementById("selectAllCheckbox").checked;
+      const query = document.getElementById("filterGeneral").value.toLowerCase();
+
+      globalProductsData.forEach((product, globalIndex) => {
+        // Single Search Filter matching Title, Vendor or Type
+        if (query) {
+            const matchTitle = product.title && product.title.toLowerCase().includes(query);
+            const matchVendor = product.vendor && product.vendor.toLowerCase().includes(query);
+            const matchType = product.product_type && product.product_type.toLowerCase().includes(query);
+            if (!matchTitle && !matchVendor && !matchType) return;
+        }
+
         if (product.images && product.images.length > 0) {
           const thumb = getMasterImageUrl(product.images[0].src);
           const box = document.createElement("div");
@@ -449,13 +669,18 @@
           
           const checkedAttr = isSelectAllChecked ? "checked" : "";
           const selectedClass = isSelectAllChecked ? "selected" : "";
+          const vendorText = product.vendor ? ` | ${product.vendor}` : "";
+          const selectedCount = product.selectedImageIndices.length;
 
           box.innerHTML = `
-            <img src="${thumb}" loading="lazy" onclick="openModal('${thumb}')">
+            <img src="${thumb}" loading="lazy" onclick="openModal(${globalIndex}, 0)">
             <div class="product-info ${selectedClass}" onclick="toggleSingleSelection(${globalIndex}, this)">
               <div class="product-details">
                 <div class="product-title" title="${product.title}">${product.title}</div>
-                <div class="image-count">${product.images.length} images</div>
+                <div class="product-meta">
+                  Selected: <b>${selectedCount}/${product.images.length}</b> images ${vendorText}
+                </div>
+                <button class="btn-outline" onclick="openSelectorModal(${globalIndex}, event)">Select Specific Images</button>
               </div>
               <input type="checkbox" class="product-cb" value="${globalIndex}" ${checkedAttr} onclick="event.stopPropagation(); updateDownloadButton()">
             </div>
@@ -493,24 +718,16 @@
     function generateUniqueFolderName(product, folderTracker) {
       const baseName = cleanFileName(product.title);
       let finalName = baseName;
-
       if (folderTracker.has(baseName)) {
         const sku = product.variants && product.variants.length > 0 ? cleanFileName(product.variants[0].sku) : null;
-        
-        if (sku && !folderTracker.has(`${baseName} - ${sku}`)) {
-          finalName = `${baseName} - ${sku}`;
-        } else {
+        if (sku && !folderTracker.has(`${baseName} - ${sku}`)) finalName = `${baseName} - ${sku}`;
+        else {
           let count = folderTracker.get(baseName) + 1;
-          while (folderTracker.has(`${baseName} - ${count}`)) {
-            count++;
-          }
+          while (folderTracker.has(`${baseName} - ${count}`)) count++;
           finalName = `${baseName} - ${count}`;
           folderTracker.set(baseName, count); 
         }
-      } else {
-        folderTracker.set(baseName, 1);
-      }
-      
+      } else folderTracker.set(baseName, 1);
       folderTracker.set(finalName, 1);
       return finalName;
     }
@@ -526,25 +743,33 @@
       downloadBtn.disabled = true;
       const zip = new JSZip();
       
-      let totalImages = selectedProducts.reduce((sum, p) => sum + (p.images ? p.images.length : 0), 0);
-      let processedCount = 0;
+      // Calculate total specific images selected
+      let totalImagesToDownload = selectedProducts.reduce((sum, p) => sum + p.selectedImageIndices.length, 0);
       
+      if(totalImagesToDownload === 0) {
+          status.innerText = "No specific images selected to download!";
+          downloadBtn.disabled = false;
+          return;
+      }
+
+      let processedCount = 0;
       const folderTracker = new Map();
 
       try {
         for (const product of selectedProducts) {
-          if (!product.images || product.images.length === 0) continue;
+          if (!product.images || product.selectedImageIndices.length === 0) continue;
 
           const folderName = generateUniqueFolderName(product, folderTracker);
           const folder = zip.folder(folderName);
           
           for (let i = 0; i < product.images.length; i++) {
+            // Check if this image index was selected by user
+            if(!product.selectedImageIndices.includes(i)) continue;
+
             const url = getMasterImageUrl(product.images[i].src);
-            
             try {
               const rawBlob = await fetchImageAsBlob(url);
               const { blob: finalBlob, ext } = await convertImageBlob(rawBlob, format);
-              
               const filename = `${folderName}-${i + 1}.${ext}`;
               folder.file(filename, finalBlob);
             } catch (err) {
@@ -552,7 +777,7 @@
             }
 
             processedCount++;
-            status.innerText = `Processing: ${processedCount} / ${totalImages} images...`;
+            status.innerText = `Processing: ${processedCount} / ${totalImagesToDownload} images...`;
           }
         }
 
