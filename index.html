@@ -288,7 +288,10 @@
 <body>
 
   <div class="sticky-header">
-    <h2>Shopify Product Downloader</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h2 style="margin: 0;">Shopify Product Downloader</h2>
+      <div id="status" style="margin-bottom: 0;">Ready</div>
+    </div>
 
     <div class="header-controls">
       <div class="input-group">
@@ -318,7 +321,6 @@
     </div>
   </div>
 
-  <div id="status">Ready</div>
   <div class="gallery" id="gallery"></div>
   
   <div class="load-more-container">
@@ -594,7 +596,9 @@
 
       currentPage = 1;
       globalProductsData = [];
+      globalSelectedProducts.clear(); // Eta purono link er kora selection clear korbe
       document.getElementById("gallery").innerHTML = "";
+      updateDownloadButton(); // Eta button er count theke purono data reset korbe
       document.getElementById("actionGroup").style.display = "none";
       document.getElementById("filterGroup").style.display = "none";
       document.getElementById("loadMoreBtn").style.display = "none";
