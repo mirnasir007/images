@@ -295,9 +295,9 @@
 
     <div class="header-controls">
       <div class="input-group">
-        <input type="text" id="collectionUrl" class="url-input" placeholder="">
-        <button class="btn-primary" onclick="loadProducts()">Fetch Products</button>
-      </div>
+  <input type="text" id="collectionUrl" class="url-input" placeholder="" onkeypress="if(event.key === 'Enter') loadProducts()">
+  <button class="btn-primary" onclick="loadProducts()">Fetch Products</button>
+</div>
       
       <div class="action-group" id="actionGroup" style="display: none;">
         <select id="formatSelect">
