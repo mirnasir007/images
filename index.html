@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -318,6 +319,17 @@
     <div class="filter-group" id="filterGroup" style="display: none;">
       <strong>Filter:</strong>
       <input type="text" id="filterGeneral" class="filter-input" placeholder="Search..." oninput="applyFilters()">
+      
+      <strong style="margin-left: 15px;">Currency:</strong>
+      <select id="currencySelect" onchange="changeCurrency()">
+        <option value="original">Original</option>
+        <option value="usd">USD ($)</option>
+        <option value="bdt">BDT (৳)</option>
+        <option value="pkr">PKR (Rs)</option>
+        <option value="inr">INR (₹)</option>
+        <option value="eur">EUR (€)</option>
+        <option value="gbp">GBP (£)</option>
+      </select>
     </div>
   </div>
 
@@ -352,6 +364,11 @@
     
     // Global Memory for Persistent Selection
     let globalSelectedProducts = new Map();
+
+    // Live Currency Variables
+    let exchangeRates = null;
+    let activeCurrency = "original";
+    let baseStoreCurrency = "usd";
     
     // Slider variables
     let currentSliderProductIndex = -1;
@@ -555,7 +572,8 @@
                 p.title.toLowerCase().includes(keyword) || 
                 (p.vendor && p.vendor.toLowerCase().includes(keyword)) ||
                 (p.product_type && p.product_type.toLowerCase().includes(keyword)) ||
-                (p.tags && p.tags.some(t => t.toLowerCase().includes(keyword)))
+                (p.tags && p.tags.some(t => t.toLowerCase().includes(keyword))) ||
+                (p.variants && p.variants.length > 0 && p.variants[0].sku && p.variants[0].sku.toLowerCase().includes(keyword))
             );
         } else {
             const fetchPromises = searchProducts.map(sp => 
@@ -604,6 +622,9 @@
       document.getElementById("loadMoreBtn").style.display = "none";
       document.getElementById("selectAllCheckbox").checked = true;
       document.getElementById("filterGeneral").value = "";
+      
+      activeCurrency = "original";
+      document.getElementById("currencySelect").value = "original";
 
       status.innerText = "Connecting to Shopify...";
 
@@ -659,6 +680,40 @@
 
     function applyFilters() { renderApp(); }
 
+    async function changeCurrency() {
+      const select = document.getElementById("currencySelect");
+      activeCurrency = select.value;
+      
+      if (activeCurrency === "original") {
+        renderApp();
+        return;
+      }
+
+      const status = document.getElementById("status");
+      const originalStatus = status.innerText;
+      status.innerText = "Fetching live exchange rates...";
+      
+      try {
+        const shopUrl = document.getElementById("collectionUrl").value.toLowerCase();
+        baseStoreCurrency = shopUrl.includes(".pk") ? "pkr" : "usd";
+        
+        if (!exchangeRates || !exchangeRates[baseStoreCurrency]) {
+          const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${baseStoreCurrency}.json`);
+          exchangeRates = await res.json();
+        }
+        status.innerText = originalStatus;
+        renderApp();
+      } catch (error) {
+        status.innerText = "Failed to load exchange rates.";
+        console.error(error);
+      }
+    }
+    
+    function getCurrencySymbol(curr) {
+      const symbols = { usd: "$", bdt: "৳", pkr: "rs ", inr: "₹", eur: "€", gbp: "£" };
+      return symbols[curr] || curr.toUpperCase();
+    }
+
     function renderApp() {
       const gallery = document.getElementById("gallery");
       gallery.innerHTML = "";
@@ -666,12 +721,14 @@
       const query = document.getElementById("filterGeneral").value.toLowerCase();
 
       globalProductsData.forEach((product, globalIndex) => {
-        // Single Search Filter matching Title, Vendor or Type
+        // Single Search Filter matching Title, Vendor, Type or SKU
         if (query) {
             const matchTitle = product.title && product.title.toLowerCase().includes(query);
             const matchVendor = product.vendor && product.vendor.toLowerCase().includes(query);
             const matchType = product.product_type && product.product_type.toLowerCase().includes(query);
-            if (!matchTitle && !matchVendor && !matchType) return;
+            const matchSku = product.variants && product.variants.length > 0 && product.variants[0].sku && product.variants[0].sku.toLowerCase().includes(query);
+            
+            if (!matchTitle && !matchVendor && !matchType && !matchSku) return;
         }
 
         if (product.images && product.images.length > 0) {
@@ -696,6 +753,32 @@
              globalSelectedProducts.set(product.id, product);
           }
 
+          let priceDisplay = "";
+          let skuText = "N/A";
+          if (product.variants && product.variants.length > 0) {
+            skuText = product.variants[0].sku || "N/A";
+            let priceVal = parseFloat(product.variants[0].price);
+            
+            if (activeCurrency === "original") {
+              const shopUrl = document.getElementById("collectionUrl").value.toLowerCase();
+              if (shopUrl.includes(".pk")) {
+                priceDisplay = `${priceVal} rs`;
+              } else {
+                priceDisplay = `$${priceVal}`;
+              }
+            } else {
+              if (exchangeRates && exchangeRates[baseStoreCurrency] && exchangeRates[baseStoreCurrency][activeCurrency]) {
+                const rate = exchangeRates[baseStoreCurrency][activeCurrency];
+                const convertedPrice = (priceVal * rate).toFixed(2);
+                priceDisplay = `${getCurrencySymbol(activeCurrency)}${convertedPrice}`;
+              } else {
+                priceDisplay = `Loading...`;
+              }
+            }
+          }
+          
+          const typeText = product.product_type || "N/A";
+
           box.innerHTML = `
             <img src="${thumb}" loading="lazy" onclick="openModal(${globalIndex}, 0)">
             <div class="product-info ${selectedClass}" onclick="toggleSingleSelection(${globalIndex}, this)">
@@ -704,7 +787,13 @@
                 <div class="product-meta">
                   Selected: <b>${selectedCount}/${product.images.length}</b> images ${vendorText}
                 </div>
-                <button class="btn-outline" onclick="openSelectorModal(${globalIndex}, event)">Select Specific Images</button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <button class="btn-outline" onclick="openSelectorModal(${globalIndex}, event)">Select Specific Images</button>
+                  <span style="font-weight: 600; font-size: 12px; color: #28a745; margin-top: 8px; white-space: nowrap;">${priceDisplay}</span>
+                </div>
+                <div style="font-size: 11px; color: #6c757d; margin-top: 8px;">
+                  Type: <b>${typeText}</b> | SKU: <b>${skuText}</b>
+                </div>
               </div>
               <input type="checkbox" class="product-cb" value="${globalIndex}" ${checkedAttr} onclick="event.stopPropagation(); updateDownloadButton()">
             </div>
